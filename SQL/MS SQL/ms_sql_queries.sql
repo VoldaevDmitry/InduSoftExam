@@ -16,7 +16,7 @@ CREATE TABLE EMPLOYEE (
     DEPARTMENT_ID INT,
     CHIEF_ID INT,
     NAME VARCHAR(100),
-    SALARY NUMERIC,
+    SALARY DECIMAL(10,2),
     FOREIGN KEY (DEPARTMENT_ID) REFERENCES DEPARTMENT(ID),
     FOREIGN KEY (CHIEF_ID) REFERENCES EMPLOYEE(ID)
 );
@@ -128,7 +128,11 @@ CREATE OR ALTER PROCEDURE UPDATESALARYFORDEPARTMENT (
     @p_percent DECIMAL(5, 2)
 ) AS
 BEGIN
+	DECLARE @v_old_employee_table table(ID INT, DEPARTMENT_ID INT, CHIEF_ID INT, NAME VARCHAR(100), SALARY DECIMAL(10,2));
     DECLARE @v_chief_salary DECIMAL(10, 2);
+	
+	insert into @v_old_employee_table 
+	SELECT * FROM [dbo].[EMPLOYEE]
 
     -- Получение ЗП начальника отдела
     SELECT @v_chief_salary = SALARY
@@ -143,7 +147,7 @@ BEGIN
 	
     DECLARE @v_new_salary DECIMAL(10, 2);
 	
-    -- Получение ЗП начальника отдела
+    -- Получение новой ЗП начальника отдела
     SELECT @v_new_salary = MAX(SALARY)
     FROM EMPLOYEE
     WHERE DEPARTMENT_ID = @p_department_id AND CHIEF_ID IS NOT NULL AND SALARY > @v_chief_salary;
@@ -161,13 +165,9 @@ BEGIN
     END;
 
     -- Вывод перечня сотрудников с обновленной и старой ЗП
-    SELECT E.ID, E.NAME, E.SALARY AS NewSalary, OLD.SALARY AS OldSalary, @v_new_salary
+    SELECT E.ID, E.NAME, E.SALARY AS NewSalary, OLD.SALARY AS OldSalary
     FROM EMPLOYEE E
-    LEFT JOIN (
-        SELECT ID, SALARY
-        FROM EMPLOYEE
-        WHERE DEPARTMENT_ID = @p_department_id
-    ) OLD ON E.ID = OLD.ID
+    LEFT JOIN @v_old_employee_table OLD ON E.ID = OLD.ID
     WHERE E.DEPARTMENT_ID = @p_department_id;
 END;
 

@@ -19,7 +19,7 @@ CREATE TABLE CompanySchema.EMPLOYEE (
     DEPARTMENT_ID INT REFERENCES CompanySchema.DEPARTMENT(ID),
     CHIEF_ID INT REFERENCES CompanySchema.EMPLOYEE(ID),
     NAME VARCHAR(100),
-    SALARY NUMERIC
+    SALARY DECIMAL(10, 2)
 );
 
 
@@ -111,39 +111,64 @@ FROM CompanySchema.EMPLOYEE
 
 
 -- Создание хранимой процедуры UPDATESALARYFORDEPARTMENT
-CREATE OR REPLACE FUNCTION companyschema.updatesalaryfordepartment(IN department_id_param integer, IN percent_param numeric)
-RETURNS TABLE (ID_R INT, DEPARTMENT_ID_R INT, CHIEF_ID_R INT, NAME_R VARCHAR, SALARY_R NUMERIC)
+CREATE OR REPLACE FUNCTION companyschema.updatesalaryfordepartment(
+	p_department_id integer,
+	p_percent numeric)
+    RETURNS TABLE(r_id integer, r_name character varying, r_newSalary numeric, r_oldSalary numeric) 
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+    ROWS 1000
 
-LANGUAGE 'plpgsql'
-AS $$
+AS $BODY$
 DECLARE
-    chief_salary NUMERIC;
-    new_salary NUMERIC;
+    v_chief_salary DECIMAL(10, 2);
+    v_new_salary DECIMAL(10, 2);
+
+    	
 BEGIN
+
+create temp table v_old_employee_table(ID INT, DEPARTMENT_ID INT, CHIEF_ID INT, NAME VARCHAR(100), SALARY DECIMAL(10,2));
+
+	insert into v_old_employee_table 
+	SELECT * FROM CompanySchema.EMPLOYEE;
+	
     -- Получение ЗП начальника отдела
-    SELECT SALARY INTO chief_salary
+    SELECT SALARY INTO v_chief_salary
     FROM CompanySchema.EMPLOYEE
-    WHERE DEPARTMENT_ID = department_id_param AND CHIEF_ID IS NULL;
+    WHERE DEPARTMENT_ID = p_department_id AND CHIEF_ID IS NULL;
 
     -- Повышение ЗП сотрудников в отделе
     UPDATE CompanySchema.EMPLOYEE
-    SET SALARY = SALARY * (1 + percent_param / 100)
-    WHERE DEPARTMENT_ID = department_id_param AND CHIEF_ID IS NOT NULL;
+    SET SALARY = SALARY * (1 + p_percent / 100)
+    WHERE DEPARTMENT_ID = p_department_id AND CHIEF_ID IS NOT NULL;
 	
 	-- Получение новой ЗП начальника отдела
-    SELECT MAX(SALARY) INTO new_salary
+    SELECT MAX(SALARY) INTO v_new_salary
     FROM CompanySchema.EMPLOYEE
-    WHERE DEPARTMENT_ID = department_id_param AND CHIEF_ID IS NOT NULL AND SALARY > chief_salary;
+    WHERE DEPARTMENT_ID = p_department_id AND CHIEF_ID IS NOT NULL AND SALARY > v_chief_salary;
 
     -- Повышение ЗП начальника, если необходимо
-    IF new_salary is not null THEN
+    IF v_new_salary is not null THEN
         UPDATE CompanySchema.EMPLOYEE
-        SET SALARY = new_salary
-        WHERE ID = (SELECT CHIEF_ID FROM CompanySchema.EMPLOYEE WHERE DEPARTMENT_ID = department_id_param AND CHIEF_ID IS NOT NULL AND SALARY = new_salary); 
+        SET SALARY = v_new_salary
+        WHERE ID = (SELECT CHIEF_ID FROM CompanySchema.EMPLOYEE WHERE DEPARTMENT_ID = p_department_id AND CHIEF_ID IS NOT NULL AND SALARY = v_new_salary); 
     END IF;
 
-
     -- Возврат перечня сотрудников с обновленной и старой ЗП
-    RETURN QUERY SELECT * FROM CompanySchema.EMPLOYEE WHERE DEPARTMENT_ID = department_id_param;
+    --RETURN QUERY SELECT * FROM CompanySchema.EMPLOYEE WHERE DEPARTMENT_ID = department_id_param;
+	
+	
+
+    -- Вывод перечня сотрудников с обновленной и старой ЗП
+    RETURN QUERY SELECT E.ID, E.NAME, E.SALARY AS NewSalary, OLD.SALARY AS OldSalary
+    FROM CompanySchema.EMPLOYEE E
+    LEFT JOIN v_old_employee_table OLD ON E.ID = OLD.ID
+    WHERE E.DEPARTMENT_ID = p_department_id;
+	
+	drop table v_old_employee_table;
 END;
-$$;
+$BODY$;
+
+ALTER FUNCTION companyschema.updatesalaryfordepartment(integer, numeric)
+    OWNER TO postgres;
