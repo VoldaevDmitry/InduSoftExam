@@ -31,36 +31,34 @@ public class SalaryApp extends JFrame {
         fetchButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
 
-                String dbUrl = "jdbc:sqlserver://DESKTOP-8O7MJMF\\SQLEXPRESS14;"
-                		+ "databasename=MyCompanyDB;integratedSecurity=true;"
-                		+ "encrypt=true;trustServerCertificate=true";
+                String dbUrl = "jdbc:sqlserver://DESKTOP-8O7MJMF\\SQLEXPRESS14;databasename=CompanyDB;encrypt=true;trustServerCertificate=true";
                 
                 
                 String driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
-                String dbUser = "";
-                String dbPassword = "";
+                String dbUser = "testUser";
+                String dbPassword = "1234";
 
                 try {
                     // Establish a connection to the database
                 	Class.forName(driver);//.newInstance();
                 	
-                    Connection connection = DriverManager.getConnection(dbUrl);
-
+                    Connection connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+                    
                     // Prepare the call to the stored procedure
                     String callProcedure = "{call UPDATESALARYFORDEPARTMENT(?, ?)}";
                     CallableStatement callableStatement = connection.prepareCall(callProcedure);
 
-                    // Set the input parameters
-                    int departmentId = 123; // Replace with the actual department ID
-                    double percentIncrease = 10.0; // Replace with the desired percentage increase
+                    // Задаем параметры
+                    int departmentId = 2;
+                    double percentIncrease = 23.0;
 
                     callableStatement.setInt(1, departmentId);
                     callableStatement.setDouble(2, percentIncrease);
 
-                    // Execute the stored procedure
+                    // Запускаем процедуру
                     callableStatement.execute();
 
-                    // Retrieve the result set (if needed)
+                    // Получаем данные после выполнения хранимой процедуры
                     ResultSet resultSet = callableStatement.getResultSet();
                     while (resultSet.next()) {
                         int employeeId = resultSet.getInt("ID");
@@ -75,7 +73,7 @@ public class SalaryApp extends JFrame {
                         System.out.println("--------------------------");
                     }
 
-                    // Close resources
+                    // Освобождаем ресурсы
                     resultSet.close();
                     callableStatement.close();
                     connection.close();
