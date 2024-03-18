@@ -9,11 +9,11 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
-            <Label Content="Department ID:" VerticalAlignment="Center"/>
+            <Label Content="ID отдела:" VerticalAlignment="Center"/>
             <TextBox x:Name="txtDepartmentId" Width="100" Margin="5"/>
-            <Label Content="Percent Increase:" VerticalAlignment="Center"/>
+            <Label Content="Процент увеличения ЗП:" VerticalAlignment="Center"/>
             <TextBox x:Name="txtPercentIncrease" Width="100" Margin="5"/>
-            <Button Content="Execute Query" Click="btnExecuteQuery_Click" Margin="10"/>
+            <Button Content="Повысить ЗП" Click="btnExecuteQuery_Click" Margin="10"/>
         </StackPanel>
 
         <DataGrid x:Name="dgvResults" Grid.Row="1" AutoGenerateColumns="True" Margin="10"/>

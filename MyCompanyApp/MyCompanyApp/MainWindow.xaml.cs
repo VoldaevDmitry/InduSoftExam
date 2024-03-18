@@ -13,12 +13,7 @@ namespace MyCompanyApp
         {
             InitializeComponent();
         }
-
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            // Load initial data or perform any other setup
-        }
-
+        
         private void btnExecuteQuery_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -26,7 +21,7 @@ namespace MyCompanyApp
                 int departmentId = int.Parse(txtDepartmentId.Text);
                 double percentIncrease = double.Parse(txtPercentIncrease.Text);
 
-                // Execute the stored procedure to update salaries
+                // Запуск хранимой процедуры
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
@@ -38,8 +33,10 @@ namespace MyCompanyApp
                         command.ExecuteNonQuery();
                         using (SqlDataReader reader = command.ExecuteReader())
                         {
+                            //чтение результатов выполнения
                             DataTable dataTable = new DataTable();
                             dataTable.Load(reader);
+                            //вывод результатов на форму
                             dgvResults.ItemsSource = dataTable.DefaultView;
                         }
 
