@@ -7,7 +7,7 @@ namespace MyCompanyApp
 {
     public partial class MainWindow : Window
     {
-        private readonly string connectionString = "Data Source=DESKTOP-8O7MJMF\\SQLEXPRESS14;Initial Catalog=MyCompanyDB;Integrated Security=True";
+        private readonly string connectionString = "Data Source=DESKTOP-8O7MJMF\\SQLEXPRESS14;Initial Catalog=CompanyDB;Integrated Security=True";
 
         public MainWindow()
         {
@@ -36,19 +36,14 @@ namespace MyCompanyApp
                         command.Parameters.AddWithValue("@p_department_id", departmentId);
                         command.Parameters.AddWithValue("@p_percent", percentIncrease);
                         command.ExecuteNonQuery();
-                    }
-
-                    // Retrieve data from the database
-                    using (SqlCommand queryCommand = new SqlCommand("SELECT ID, NAME, SALARY FROM EMPLOYEE WHERE DEPARTMENT_ID = @departmentId", connection))
-                    {
-                        queryCommand.Parameters.AddWithValue("@departmentId", departmentId);
-                        using (SqlDataReader reader = queryCommand.ExecuteReader())
+                        using (SqlDataReader reader = command.ExecuteReader())
                         {
                             DataTable dataTable = new DataTable();
                             dataTable.Load(reader);
                             dgvResults.ItemsSource = dataTable.DefaultView;
                         }
-                    }
+
+                    }                    
                 }
             }
             catch (Exception ex)
